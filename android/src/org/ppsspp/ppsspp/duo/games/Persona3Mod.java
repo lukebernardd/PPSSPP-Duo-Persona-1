@@ -32,10 +32,12 @@ import java.util.Arrays;
 //
 // Found on ULES01523 v1.01 (two battles in Monad from a downloaded save, one with the hero alone,
 // one with a full party). Everything but the battle objects is in the main module's data:
-// - 0x08C3BDB8: 0xFFFFFFFF outside battles. In a battle, the u32 at 0x08C3BDC0 points 0xFFC past
-//   the battle's participants: u32 party size, a u32 (3 in both battles), four pointers to the party
-//   members' wrappers (u32 0x00010000, pointer to the character), a pointer to the enemy group and
-//   a u32 (0x000100E3 in both, left unchecked as it may be a battle type).
+// - 0x08C3BDB8: 0xFFFFFFFF outside battles, a battle number in a battle (0xE3 in Monad, 0xDD in a
+//   US player's Tartarus battle). The battle's participants are on the heap: a u32, a u32 (3 in
+//   both test battles), four pointers to the party members' wrappers (u32 0x00010000, pointer to
+//   the character; 0 for empty slots), a pointer to the enemy group and 0x00010000 | the battle
+//   number. In Monad they were 0xFFC before the pointer at 0x08C3BDC0, but not in that player's
+//   battle, so they're searched for by that last word, from there and then through the heap.
 // - Characters: the hero at 0x08E63BF0 (given name 0x12 bytes earlier, two bytes a letter, 0x80 then
 //   the letter + 0x60), the others at 0x08E68BB8 + (id - 2) * 0x118. +2 u16 id (1 hero, 2 Yukari,
 //   3 Aigis, 4 Mitsuru, 5 Junpei, 7 Akihiko, 8 Ken, 9 Shinjiro, 10 Koromaru), +8 HP, +0xA SP; the
@@ -56,6 +58,7 @@ public final class Persona3Mod extends DuoMod {
 
 	private static final int BATTLE = 0x08C3BDB8;
 	private static final int PARTICIPANTS_BACK = 0xFFC;
+	private static final int MAX_CANDIDATES = 64;
 	private static final int HERO_BLOCK = 0x08E63BC0;  // the hero's names, then the hero
 	private static final int HERO = 0x08E63BF0;
 	private static final int MEMBERS = 0x08E68BB8;
@@ -90,6 +93,9 @@ public final class Persona3Mod extends DuoMod {
 	// What the mod sees, shown small on the idle screen so a screenshot says why nothing is drawn.
 	private String info = "";
 	private String flagInfo = "";
+	// The participants search, per battle (flag value and pointer).
+	private int battleFlag, battlePtr, searchFrom, candidates;
+	private boolean searching, searchDone;
 
 	private static Persona3Art art;
 	private static boolean artLoading;
@@ -275,6 +281,7 @@ public final class Persona3Mod extends DuoMod {
 		int ptr = f.getInt(8);
 		flagInfo = "flag " + Integer.toHexString(f.getInt(0)) + ", pointer " + Integer.toHexString(ptr);
 		if (f.getInt(0) == -1) {
+			battleFlag = battlePtr = 0;
 			info = "no battle (" + flagInfo + ")";
 			return reject(null);
 		}
@@ -282,10 +289,24 @@ public final class Persona3Mod extends DuoMod {
 			info = "no battle (" + flagInfo + ")";
 			return reject(null);
 		}
-		int part = ptr - PARTICIPANTS_BACK;
-		if (part != participants) {
-			participants = part;
+		int flagValue = f.getInt(0);
+		int tail = 0x00010000 | (flagValue & 0xFFFF);
+		if (flagValue != battleFlag || ptr != battlePtr) {
+			// A new battle: try where the participants were in Monad first.
+			battleFlag = flagValue;
+			battlePtr = ptr;
+			searchFrom = 0x08800000;
+			candidates = 0;
+			searchDone = false;
+			participants = ptr - PARTICIPANTS_BACK;
 			watchBattle();
+			return null;
+		}
+		if (participants == 0) {
+			if (searchDone) {
+				return reject("participants not found (no " + Integer.toHexString(tail) + ")");
+			}
+			findParticipants(tail);
 			return null;
 		}
 		byte[] pd = host.readMemoryWatch(3);
@@ -293,25 +314,29 @@ public final class Persona3Mod extends DuoMod {
 			return null;
 		}
 		ByteBuffer p = le(pd);
-		int count = p.getInt(0);
-		if (count < 1 || count > 4) {
-			return reject("party size " + count);
+		String bad = checkParticipants(p, tail);
+		if (bad != null) {
+			// Not them: look further on.
+			participants = 0;
+			if (searchDone) {
+				return reject(bad + ", participants not found");
+			}
+			findParticipants(tail);
+			return null;
+		}
+		int count = 0;
+		while (count < 4 && p.getInt(8 + count * 4) != 0) {
+			count++;
 		}
 		boolean changed = false;
 		for (int i = 0; i < 4; i++) {
-			int w = i < count ? p.getInt(8 + i * 4) : 0;
-			if (w != 0 && !isPointer(w)) {
-				return reject("party pointer " + Integer.toHexString(w));
-			}
+			int w = p.getInt(8 + i * 4);
 			if (w != wrappers[i]) {
 				wrappers[i] = w;
 				changed = true;
 			}
 		}
 		int g = p.getInt(0x18);
-		if (!isPointer(g)) {
-			return reject("enemy group pointer " + Integer.toHexString(g));
-		}
 		if (g != group) {
 			group = g;
 			changed = true;
@@ -371,6 +396,58 @@ public final class Persona3Mod extends DuoMod {
 		lastReject = null;
 		info = "battle read";
 		return battle;
+	}
+
+	// Null if p looks like the participants: tail word, party pointers then zeros, a group pointer.
+	private static String checkParticipants(ByteBuffer p, int tail) {
+		if (p.getInt(0x1C) != tail) {
+			return "no " + Integer.toHexString(tail);
+		}
+		boolean end = false;
+		for (int i = 0; i < 4; i++) {
+			int w = p.getInt(8 + i * 4);
+			if (w == 0) {
+				end = true;
+			} else if (end || !isPointer(w)) {
+				return "party pointer " + Integer.toHexString(w);
+			}
+		}
+		if (p.getInt(8) == 0) {
+			return "no party";
+		}
+		if (!isPointer(p.getInt(0x18))) {
+			return "enemy group pointer " + Integer.toHexString(p.getInt(0x18));
+		}
+		return null;
+	}
+
+	// The next place in RAM with the participants' last word, checked on the next status.
+	private void findParticipants(int tail) {
+		if (searching || searchDone) {
+			return;
+		}
+		if (++candidates > MAX_CANDIDATES) {
+			searchDone = true;
+			return;
+		}
+		searching = true;
+		info = "looking for the battle's participants (" + flagInfo + ")";
+		boolean queued = host.findMemory(searchFrom, 0x0A000000, new int[] {0x1C}, new int[] {tail}, address -> {
+			searching = false;
+			if (host == null) {
+				return;
+			}
+			if (address == 0) {
+				searchDone = true;
+				return;
+			}
+			searchFrom = address + 4;
+			participants = address;
+			watchBattle();
+		});
+		if (!queued) {
+			searching = false;
+		}
 	}
 
 	// Logs why a battle that the flag announces can't be read, once per distinct reason.
