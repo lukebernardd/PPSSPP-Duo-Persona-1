@@ -16,6 +16,10 @@
   <a href="LICENSE.TXT"><img src="https://img.shields.io/badge/license-GPLv2%2B-lightgrey" alt="License GPLv2+"></a>
 </p>
 
+<p align="center">
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/mkaflowski/PPSSPP-Duo"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" width="200" alt="Get it on Obtainium"></a>
+</p>
+
 > **No games are included.** This repository and its releases contain only the emulator. Use your
 > own, legally purchased games (dumped from your own UMDs or bought digitally).
 
@@ -71,7 +75,9 @@ gear tab has the settings (default mod, haptics, which display to use).
 
 ## Install
 
-1. Download the APK from [Releases](https://github.com/mkaflowski/PPSSPP-Duo/releases).
+1. Download the APK from [Releases](https://github.com/mkaflowski/PPSSPP-Duo/releases), or add
+   `https://github.com/mkaflowski/PPSSPP-Duo` to [Obtainium](https://github.com/ImranR98/Obtainium)
+   (the badge above does it in one tap) to get updates automatically.
 2. Install it. It doesn't replace regular PPSSPP.
 3. Start a game. The second screen turns on by itself on dual-screen devices; on a single-screen
    phone the app works like plain PPSSPP.
