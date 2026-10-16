@@ -533,7 +533,7 @@ void MainScreen::CreateViews() {
 		auto di = GetI18NCategory(I18NCat::DIALOG);
 		std::string upgradeMessage(di->T("New version of PPSSPP available"));
 		// The version only really fits in the horizontal layout.
-		upgradeMessage += ": " + g_Config.sUpgradeVersion;
+		upgradeMessage += (Config::IsDuoBuild() ? ": PPSSPP Duo " : ": ") + g_Config.sUpgradeVersion;
 		UI::LinearLayout *upgradeBar = CreateDismissableBar(upgradeMessage, di->T("Download"), [this]() {
 			g_Config.DismissUpgrade();
 			g_Config.Save("dismissupgrade");
@@ -591,6 +591,10 @@ void MainScreen::OnAllowStorage(UI::EventParams &e) {
 
 // See Config::SupportsUpgradeCheck() if you add more platforms.
 void MainScreen::OnDownloadUpgrade(UI::EventParams &e) {
+	if (Config::IsDuoBuild()) {
+		System_LaunchUrl(LaunchUrlType::BROWSER_URL, "https://github.com/mkaflowski/PPSSPP-Duo/releases/latest");
+		return;
+	}
 #if PPSSPP_PLATFORM(ANDROID)
 	// Go to app store
 	if (System_GetPropertyBool(SYSPROP_APP_GOLD)) {

@@ -751,6 +751,8 @@ public:
 	void UpdateIniLocation(const char *iniFileName = nullptr, const char *controllerIniFilename = nullptr);
 
 	bool SupportsUpgradeCheck() const;
+	// PPSSPP Duo builds (tagged duo-v*) check the fork's GitHub releases instead of ppsspp.org.
+	static bool IsDuoBuild();
 	void CheckForUpdate();
 	void VersionJsonDownloadCompleted(http::Request &download);
 	void DismissUpgrade();

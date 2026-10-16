@@ -1661,12 +1661,21 @@ constexpr int UPDATE_CHECK_FREQ = 1;
 constexpr int UPDATE_CHECK_FREQ = 5;
 #endif
 
+bool Config::IsDuoBuild() {
+	return startsWith(PPSSPP_GIT_VERSION, "duo-v");
+}
+
+// Duo's own tags are "duo-vX.Y.Z"; strip the prefix so Version can parse them.
+static std::string StripDuoPrefix(std::string_view version) {
+	return std::string(startsWith(version, "duo-") ? version.substr(4) : version);
+}
+
 void Config::CheckForUpdate() {
 	if (!bCheckForNewVersion || !SupportsUpgradeCheck()) {
 		return;
 	}
 
-	const char *gitVer = PPSSPP_GIT_VERSION;
+	const std::string gitVer = StripDuoPrefix(PPSSPP_GIT_VERSION);
 	Version installed(gitVer);
 	Version upgrade(sUpgradeVersion);
 	const bool versionsValid = installed.IsValid() && upgrade.IsValid();
@@ -1683,9 +1692,10 @@ void Config::CheckForUpdate() {
 	// splash screen quickly), but then we'll just show the notification next time instead, we store the
 	// upgrade number in the ini.
 
-	const bool checkThisTime = iRunCount % UPDATE_CHECK_FREQ == 0;
+	// Duo checks on every start, so a new release shows up right away.
+	const bool checkThisTime = IsDuoBuild() || iRunCount % UPDATE_CHECK_FREQ == 0;
 	if (checkThisTime) {
-		const char *versionUrl = "http://www.ppsspp.org/version.json";
+		const char *versionUrl = IsDuoBuild() ? "https://api.github.com/repos/mkaflowski/PPSSPP-Duo/releases/latest" : "http://www.ppsspp.org/version.json";
 		const char *acceptMime = "application/json, text/*; q=0.9, */*; q=0.8";
 		g_DownloadManager.StartDownload(versionUrl, Path(), http::RequestFlags::Default, acceptMime, "version", [this](http::Request &download) { VersionJsonDownloadCompleted(download); });
 	}
@@ -1711,13 +1721,18 @@ void Config::VersionJsonDownloadCompleted(http::Request &download) {
 	}
 
 	std::string version;
-	root.getString("version", &version);
+	if (IsDuoBuild()) {
+		root.getString("tag_name", &version);
+		version = StripDuoPrefix(version);
+	} else {
+		root.getString("version", &version);
+	}
 
 	#ifdef NEW_VERSION_OVERRIDE
 	version = NEW_VERSION_OVERRIDE;
 	#endif
 
-	const char *gitVer = PPSSPP_GIT_VERSION;
+	const std::string gitVer = StripDuoPrefix(PPSSPP_GIT_VERSION);
 	Version installed(gitVer);
 	Version upgrade(version);
 	Version dismissed(g_Config.sDismissedVersion);
@@ -1740,9 +1755,14 @@ void Config::VersionJsonDownloadCompleted(http::Request &download) {
 	}
 
 	if (installed < upgrade && dismissed != upgrade) {
+		const bool wasShown = !g_Config.sUpgradeMessage.empty();
 		g_Config.sUpgradeMessage = "New version of PPSSPP available!";
 		g_Config.sUpgradeVersion = upgrade.ToString();
 		g_Config.sDismissedVersion.clear();
+		if (IsDuoBuild() && !wasShown) {
+			// The main screen is usually up before the check returns; show the bar without a restart.
+			System_PostUIMessage(UIMessage::RECREATE_VIEWS);
+		}
 	}
 }
 
