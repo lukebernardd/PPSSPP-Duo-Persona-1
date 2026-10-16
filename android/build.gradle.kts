@@ -58,8 +58,8 @@ val gitVersionCode =
 		commitsSinceTag
 
 // PPSSPP Duo version. Bump both for every release.
-val duoVersionName = "0.10.4"
-val duoVersionCode = 16
+val duoVersionName = "0.10.5"
+val duoVersionCode = 17
 // Upstream PPSSPP version we're based on (Duo's own tags are "duo-v*", so they don't interfere).
 val duoUpstreamBase = providers.git("merge-base", "HEAD", "origin/master")
 val duoUpstreamVersion = providers.git("describe", "--tags", "--match", "v*", duoUpstreamBase.ifEmpty { "HEAD" })
