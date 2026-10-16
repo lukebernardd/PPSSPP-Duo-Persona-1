@@ -18,6 +18,7 @@ import android.view.View;
 import org.ppsspp.ppsspp.R;
 import org.ppsspp.ppsspp.duo.DuoMod;
 import org.ppsspp.ppsspp.duo.DuoModContext;
+import org.ppsspp.ppsspp.duo.DuoReports;
 import org.ppsspp.ppsspp.duo.DuoStatus;
 
 import java.io.File;
@@ -90,8 +91,8 @@ public final class Persona3Mod extends DuoMod {
 	private static byte[] levels, units, affinities, names;
 	private int tableChecks;
 	private String lastReject;
-	// What the mod sees, shown small on the idle screen so a screenshot says why nothing is drawn.
-	private String info = "";
+	// What the mod sees, for the Diagnostics tab (and Copy logs) when a battle isn't shown.
+	private String lastReport;
 	private String flagInfo = "";
 	// The participants search, per battle (flag value and pointer).
 	private int battleFlag, battlePtr, searchFrom, candidates;
@@ -235,7 +236,7 @@ public final class Persona3Mod extends DuoMod {
 		byte[] l = host.readMemoryWatch(0), u1 = host.readMemoryWatch(1), u2 = host.readMemoryWatch(2);
 		byte[] a = host.readMemoryWatch(3), n = host.readMemoryWatch(4);
 		if (l == null || u1 == null || u2 == null || a == null || n == null) {
-			info = "waiting for the memory watches";
+			report("waiting for the memory watches");
 			return;
 		}
 		byte[] u = new byte[u1.length + u2.length];
@@ -245,7 +246,7 @@ public final class Persona3Mod extends DuoMod {
 		// The tables are loaded after the title screen; a different release would have them elsewhere.
 		if (!"Cowardly Maya".equals(enemyName(1)) || !"Acheron Seeker".equals(enemyName(144))) {
 			names = null;
-			info = "waiting for the game's battle tables (not at the known addresses yet)";
+			report("waiting for the game's battle tables (not at the known addresses yet)");
 			if (++tableChecks == 300) {
 				Log.w(TAG, "Persona 3: no battle tables at the known addresses yet");
 			}
@@ -282,11 +283,11 @@ public final class Persona3Mod extends DuoMod {
 		flagInfo = "flag " + Integer.toHexString(f.getInt(0)) + ", pointer " + Integer.toHexString(ptr);
 		if (f.getInt(0) == -1) {
 			battleFlag = battlePtr = 0;
-			info = "no battle (" + flagInfo + ")";
+			report("no battle (" + flagInfo + ")");
 			return reject(null);
 		}
 		if (!isPointer(ptr)) {
-			info = "no battle (" + flagInfo + ")";
+			report("no battle (" + flagInfo + ")");
 			return reject(null);
 		}
 		int flagValue = f.getInt(0);
@@ -394,7 +395,7 @@ public final class Persona3Mod extends DuoMod {
 			battle.enemies[i] = e;
 		}
 		lastReject = null;
-		info = "battle read";
+		report("battle read");
 		return battle;
 	}
 
@@ -431,7 +432,7 @@ public final class Persona3Mod extends DuoMod {
 			return;
 		}
 		searching = true;
-		info = "looking for the battle's participants (" + flagInfo + ")";
+		report("looking for the battle's participants (" + flagInfo + ")");
 		boolean queued = host.findMemory(searchFrom, 0x0A000000, new int[] {0x1C}, new int[] {tail}, address -> {
 			searching = false;
 			if (host == null) {
@@ -457,7 +458,7 @@ public final class Persona3Mod extends DuoMod {
 		}
 		lastReject = why;
 		if (why != null) {
-			info = "can't read the battle: " + why + " (" + flagInfo + ")";
+			report("can't read the battle: " + why + " (" + flagInfo + ")");
 		}
 		return null;
 	}
@@ -506,10 +507,13 @@ public final class Persona3Mod extends DuoMod {
 		return sb.length() > 0 ? sb.toString() : "Hero";
 	}
 
-	// One line for the idle screen.
-	private String infoLine() {
+	private void report(String what) {
+		if (what.equals(lastReport)) {
+			return;
+		}
+		lastReport = what;
 		DuoStatus s = host != null ? host.getStatus() : null;
-		return (s != null ? s.gameId + " v" + s.discVersion + ": " : "") + info;
+		DuoReports.put("Persona 3", (s != null ? s.gameId + " v" + s.discVersion + ": " : "") + what);
 	}
 
 	@Override
@@ -586,7 +590,6 @@ public final class Persona3Mod extends DuoMod {
 			float u = Math.min(w / 1240f, h / 1080f);
 			if (battle == null) {
 				textAt(canvas, getContext().getString(R.string.duo_persona3_idle), w / 2, h / 2, 30 * u, DIM, Paint.Align.CENTER);
-				textAt(canvas, infoLine(), w / 2, h - 30 * u, 18 * u, 0xFF6B7782, Paint.Align.CENTER);
 				return;
 			}
 			float m = 24 * u, gap = 18 * u;

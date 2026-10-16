@@ -15,6 +15,7 @@ import android.widget.Toast;
 import org.ppsspp.ppsspp.R;
 import org.ppsspp.ppsspp.duo.DuoMod;
 import org.ppsspp.ppsspp.duo.DuoModContext;
+import org.ppsspp.ppsspp.duo.DuoReports;
 import org.ppsspp.ppsspp.duo.DuoStatus;
 import org.ppsspp.ppsspp.duo.DuoUi;
 
@@ -140,8 +141,13 @@ public final class DiagnosticsMod extends DuoMod {
 			size.x, size.y, d.getRefreshRate(), host.getContext().getResources().getDisplayMetrics().densityDpi,
 			d.getRotation(), d.getFlags()));
 
+		String reports = DuoReports.text();
+		if (!reports.isEmpty()) {
+			sb.append('\n').append("mods\n").append(reports);
+		}
+
 		sb.append('\n');
-		sb.append(String.format(Locale.US, "memory     %08x (%d bytes)%n", WATCH_ADDRESS, WATCH_SIZE));
+		sb.append(String.format(Locale.US, "memory    %08x (%d bytes)%n", WATCH_ADDRESS, WATCH_SIZE));
 		byte[] mem = host.readMemoryWatch(0);
 		if (mem == null) {
 			sb.append("           not readable (no game?)\n");
