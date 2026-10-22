@@ -857,7 +857,9 @@ public final class TagForceMod extends DuoMod {
 			float size = textPaint.getTextSize();
 			canvas.save();
 			canvas.translate(x, y);
-			canvas.clipRect(-size, -size, w + size, h + size);
+			// The outline may stick out a little; plain text stays inside its box.
+			float m = outline ? size : 0;
+			canvas.clipRect(-m, -m, w + m, h + m);
 			if (outline) {
 				textPaint.setStyle(Paint.Style.STROKE);
 				textPaint.setStrokeWidth(size * 0.16f);
@@ -937,9 +939,10 @@ public final class TagForceMod extends DuoMod {
 				textPaint.setTextAlign(Paint.Align.LEFT);
 			}
 
-			// The text box: description, and ATK/DEF under a line for monsters.
-			float bx = x + 10 * k, bw = 88 * k, by = y + 114.5f * k;
-			float bh = c.monster() ? 22 * k : 31 * k;
+			// The text box ((8,118)-(100,146) inside its border): description, and ATK/DEF under a
+			// line for monsters.
+			float bx = x + 10.5f * k, bw = 87 * k, by = y + 119.5f * k;
+			float bh = c.monster() ? 17 * k : 25.5f * k;
 			drawText(canvas, c.text, bx, by, bw, bh, 5.5f * k, 2.5f * k, 0xFF1A1208, false);
 			if (c.monster()) {
 				paint.setColor(0xFF1A1208);
