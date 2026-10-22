@@ -1,6 +1,6 @@
 ---
 name: ppsspp-duo-mod
-description: Use when building or fixing a PPSSPP Duo second-screen mod for a PSP game (DuoMod, games/*Mod.java, GranTurismoMod, PataponMod, GtaLcsMapMod, LuminesMod, MetalGearAcidMod, JeanneDArcMod, WipeoutPureMod, Persona3Mod), when reverse engineering a PSP game's memory or disc files for one (signature scans, RAM dumps, texture or archive formats), when testing on the AYN Thor over adb and the WebSocket debugger, or when releasing a new PPSSPP Duo version.
+description: Use when building or fixing a PPSSPP Duo second-screen mod for a PSP game (DuoMod, games/*Mod.java, GranTurismoMod, PataponMod, GtaLcsMapMod, LuminesMod, MetalGearAcidMod, JeanneDArcMod, WipeoutPureMod, Persona3Mod, TagForceMod), when reverse engineering a PSP game's memory or disc files for one (signature scans, RAM dumps, texture or archive formats), when testing on the AYN Thor over adb and the WebSocket debugger, or when releasing a new PPSSPP Duo version.
 ---
 
 # Building a PPSSPP Duo game mod
@@ -241,6 +241,11 @@ that way). Keep the last picture for a second or two when the data briefly disap
 - A HUD part can be two textures: Persona 3's faces have their outline in a separate white
   silhouette that the HUD draws light blue under the face. When a decoded picture is right but
   looks bare next to the game, look at the textures next to it.
+- Konami's Tag Force EHP (`EHP` and a 0x03 byte, u32 size, `NOT `, u32 count, then name offset / data
+  offset pairs; each name is followed by the file's u32 size) and CIP (u32 sector per card from
+  +0x30, bit 31 = list of alternative pictures; DXT1 with the PSP block layout and RGB565 with red
+  in the high bits). Large card art can be an atlas: decode it at the GIM's size and look for
+  pieces separated by filler colour before assuming a swizzle.
 - Formats met so far, beyond the decoders above: WipEout's WAD (u32 version, u32 count, 16-byte
   entries of name hash, offset, size, size; no names) and FNT (see `WipeoutFont`); MGA's `_zar`
   (u32 unpacked size, then zlib); Patapon 2 keeps the drum art at `loadinggroup/gamedata.bnd ::

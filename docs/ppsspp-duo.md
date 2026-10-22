@@ -143,6 +143,16 @@ public final class MyMod extends DuoMod {
   the Wk / Str / Nul / Rpl / Dm labels and the HUD faces (with their outlines) are read from
   `umd0.cpk` at runtime (a CRI CPK with CRILAYLA compression; Atlus SPR0 / TMX0 textures, see
   `Persona3Art`) and cached as PNGs.
+- **Duel** (Yu-Gi-Oh! GX Tag Force, ULES00600 v1.01): the card under the cursor drawn like the
+  game's own (frame tinted by kind, attribute icon, level stars, text box with ATK/DEF), its name,
+  type and full text, a silver ATK/DEF panel with gold digits, both players' Life Points, whose
+  turn it is and the phase. The duel modules load at the same addresses in every duel, so the
+  state is read from fixed addresses (`0x09E4D1A0` card info, `0x09E6418C` / `0x09E64190` LP,
+  `0x09E641AC` turn side, `0x09E641B8` phase). Card names, texts and properties come from
+  `duelsys/cardinfo_eng.ehp` (EHP archive), the artwork from `card/cardh_e.cip` (a 128x64 DXT1
+  atlas per card, put back together into 78x78), the frame, icons, panels and digits from
+  `duel/basic_be.ehp` (see `TagForceMod`). The turn number isn't found yet, and only the DP and
+  MP1 phase values were seen.
 - **Screen off**: black, tab bar hidden.
 - **Diagnostics**: raw status, display info, memory dump.
 
