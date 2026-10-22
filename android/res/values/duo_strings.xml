@@ -107,4 +107,13 @@
     <string name="duo_diag_copy_logs">Copy logs</string>
     <string name="duo_diag_logs_copied">Copied the status and %1$d log lines, paste them in a message</string>
     <string name="duo_mod_diagnostics_desc">Emulator status, display info and a memory view, for mod developers</string>
+    <string name="duo_mod_tagforce">Duel</string>
+    <string name="duo_mod_tagforce_desc">Yu-Gi-Oh! GX Tag Force: the card under the cursor in full (picture, text, ATK/DEF), both players\' Life Points and the phase</string>
+    <string name="duo_tagforce_idle">Start a duel to see the cards and Life Points</string>
+    <string name="duo_tagforce_no_card">Move the cursor over a card</string>
+    <string name="duo_tagforce_loading">Reading the card from the disc…</string>
+    <string name="duo_tagforce_you">YOU</string>
+    <string name="duo_tagforce_opponent">OPPONENT</string>
+    <string name="duo_tagforce_your_turn">YOUR TURN</string>
+    <string name="duo_tagforce_opp_turn">OPPONENT\'S TURN</string>
 </resources>

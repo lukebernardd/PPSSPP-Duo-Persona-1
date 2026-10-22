@@ -107,4 +107,13 @@
     <string name="duo_diag_copy_logs">Kopiuj logi</string>
     <string name="duo_diag_logs_copied">Skopiowano status i %1$d linii logu, wklej je do wiadomości</string>
     <string name="duo_mod_diagnostics_desc">Stan emulatora, informacje o ekranie i podgląd pamięci, dla twórców modów</string>
+    <string name="duo_mod_tagforce">Pojedynek</string>
+    <string name="duo_mod_tagforce_desc">Yu-Gi-Oh! GX Tag Force: karta pod kursorem w całości (obrazek, tekst, ATK/DEF), punkty życia obu graczy i faza</string>
+    <string name="duo_tagforce_idle">Zacznij pojedynek, żeby zobaczyć karty i punkty życia</string>
+    <string name="duo_tagforce_no_card">Ustaw kursor na karcie</string>
+    <string name="duo_tagforce_loading">Czytam kartę z płyty…</string>
+    <string name="duo_tagforce_you">TY</string>
+    <string name="duo_tagforce_opponent">PRZECIWNIK</string>
+    <string name="duo_tagforce_your_turn">TWOJA TURA</string>
+    <string name="duo_tagforce_opp_turn">TURA PRZECIWNIKA</string>
 </resources>
