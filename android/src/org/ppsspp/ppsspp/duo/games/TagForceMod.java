@@ -743,8 +743,8 @@ public final class TagForceMod extends DuoMod {
 			drawCard(canvas, c, left, top, cardW / 108);
 
 			float x = left + cardW + 30, right = DW - 30;
-			float y = top;
-			// Text on top, the ATK/DEF panel at the bottom, level with the card's bottom.
+			// The ATK/DEF panel at the bottom, level with the card's bottom, and the text right above
+			// it.
 			float textBottom = bottom;
 			if (c.monster()) {
 				float statsTop = bottom - STATS_H;
@@ -760,14 +760,18 @@ public final class TagForceMod extends DuoMod {
 				nameSize -= 2;
 				paint.setTextSize(nameSize);
 			}
+			String type = typeLine(c);
+			float header = nameSize + 18 + (type.isEmpty() ? 0 : 34 + 18);
+			StaticLayout desc = fitText(c.text, right - x, textBottom - top - header, 42, 18, true);
+			float descH = desc == null ? 0 : Math.min(desc.getHeight(), textBottom - top - header);
+			float y = Math.max(top, textBottom - header - descH);
 			outlined(canvas, name, x, y + nameSize, nameSize, COLOR_GOLD, Paint.Align.LEFT);
 			y += nameSize + 18;
-			String type = typeLine(c);
 			if (!type.isEmpty()) {
 				outlined(canvas, type, x, y + 34, 34, 0xFF7BE35A, Paint.Align.LEFT);
 				y += 34 + 18;
 			}
-			drawText(canvas, c.text, x, y, right - x, textBottom - y, 42, 18, 0xFFFFFFFF, true);
+			drawText(canvas, c.text, x, y, right - x, descH, 42, 18, 0xFFFFFFFF, true);
 		}
 
 		private static final float STATS_K = 2.6f;
@@ -825,22 +829,32 @@ public final class TagForceMod extends DuoMod {
 			return y + ph;
 		}
 
-		// Wraps text into the box, shrinking it until it fits.
-		private void drawText(Canvas canvas, String text, float x, float y, float w, float h, float maxSize, float minSize, int color, boolean outline) {
+		// Wraps text to the width at the biggest size that fits the height (or the smallest one).
+		// Leaves textPaint set up for it.
+		private StaticLayout fitText(String text, float w, float h, float maxSize, float minSize, boolean outline) {
 			if (w <= 0 || h <= 0) {
-				return;
+				return null;
 			}
 			textPaint.setTypeface(outline ? Typeface.DEFAULT_BOLD : Typeface.SERIF);
+			textPaint.setStyle(Paint.Style.FILL);
 			float size = maxSize;
-			StaticLayout layout;
 			while (true) {
 				textPaint.setTextSize(size);
-				layout = new StaticLayout(text, textPaint, (int)w, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
+				StaticLayout layout = new StaticLayout(text, textPaint, (int)w, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
 				if (layout.getHeight() <= h || size <= minSize) {
-					break;
+					return layout;
 				}
 				size -= 1;
 			}
+		}
+
+		// Wraps text into the box, shrinking it until it fits.
+		private void drawText(Canvas canvas, String text, float x, float y, float w, float h, float maxSize, float minSize, int color, boolean outline) {
+			StaticLayout layout = fitText(text, w, h, maxSize, minSize, outline);
+			if (layout == null) {
+				return;
+			}
+			float size = textPaint.getTextSize();
 			canvas.save();
 			canvas.translate(x, y);
 			canvas.clipRect(-size, -size, w + size, h + size);
