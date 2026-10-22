@@ -744,8 +744,12 @@ public final class TagForceMod extends DuoMod {
 
 			float x = left + cardW + 30, right = DW - 30;
 			float y = top;
+			// Text on top, the ATK/DEF panel at the bottom, level with the card's bottom.
+			float textBottom = bottom;
 			if (c.monster()) {
-				y = drawStats(canvas, c, x, right, y) + 26;
+				float statsTop = bottom - STATS_H;
+				drawStats(canvas, c, x, right, statsTop);
+				textBottom = statsTop - 26;
 			}
 			// Name, like the info panel: yellow, outlined.
 			float nameSize = 44;
@@ -763,8 +767,11 @@ public final class TagForceMod extends DuoMod {
 				outlined(canvas, type, x, y + 34, 34, 0xFF7BE35A, Paint.Align.LEFT);
 				y += 34 + 18;
 			}
-			drawText(canvas, c.text, x, y, right - x, bottom - y, 42, 18, 0xFFFFFFFF, true);
+			drawText(canvas, c.text, x, y, right - x, textBottom - y, 42, 18, 0xFFFFFFFF, true);
 		}
+
+		private static final float STATS_K = 2.6f;
+		private static final float STATS_H = 111 * STATS_K;
 
 		private static String typeLine(Card c) {
 			if (c.kind == KIND_SPELL) {
@@ -781,7 +788,7 @@ public final class TagForceMod extends DuoMod {
 		// The silver ATK/DEF panel with gold digits, the attribute and the level next to it.
 		private float drawStats(Canvas canvas, Card c, float x, float right, float y) {
 			Bitmap p = t(T_PANEL);
-			float k = 2.6f;
+			float k = STATS_K;
 			float pw = 156 * k, ph = 111 * k;
 			if (p != null) {
 				blit(canvas, p, 0, 127, 156, 111, x, y, pw, ph, paint);
