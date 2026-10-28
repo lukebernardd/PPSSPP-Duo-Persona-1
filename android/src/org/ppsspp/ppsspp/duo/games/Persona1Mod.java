@@ -200,6 +200,12 @@ public final class Persona1Mod extends DuoMod {
             unit.level = data[offset + LEVEL] & 0xFF;
             unit.name = decodeName(data, offset + NAME);
             unit.enemy = enemy;
+            // On a fresh save, the protagonist's party-name field can temporarily
+            // contain the game's "ATLUS" placeholder instead of the character name.
+            // Treat that placeholder as Naoya so the correct label and HD portrait load.
+            if (!enemy && "ATLUS".equalsIgnoreCase(unit.name)) {
+                unit.name = "Naoya";
+            }
             if (unit.name.isEmpty()) continue;
             result[used++] = unit;
         }
@@ -337,7 +343,9 @@ public final class Persona1Mod extends DuoMod {
             if (unit.enemy) return unit.portrait();
             String n = unit.name == null ? "" : unit.name.toLowerCase(Locale.ROOT);
             String file = null;
-            if (n.contains("maki")) file = "Persona1Maki.png";
+            // The early new-game memory value may be ATLUS before readUnits normalizes it.
+            if (n.equals("atlus")) file = "Persona1Naoya.png";
+            else if (n.contains("maki")) file = "Persona1Maki.png";
             else if (n.contains("nanjo") || n.contains("kei")) file = "Persona1Kei.png";
             else if (n.contains("mark") || n.contains("masao")) file = "Persona1Masao.png";
             else if (n.contains("reiji")) file = "Persona1Reiji.png";
