@@ -488,10 +488,26 @@ public final class Persona1Mod extends DuoMod {
                     // (which was pushing his face farther out of frame).
                     int halfHeight = Math.max(1, portrait.getHeight() / 2);
                     boolean mark = unit.name != null && (unit.name.equalsIgnoreCase("MARK") || unit.name.equalsIgnoreCase("MASAO"));
-                    int cropWidth = Math.min(portrait.getWidth(), Math.max(1, Math.round(halfHeight * (iw / ih))));
-                    // Keep Mark's face near the center/right, but move the crop a little farther
-                    // left from the previous framing so his face
-                    // stays fully visible while retaining more of his body.
+                    float targetRatio = iw / ih;
+
+                    // Keep the source crop at the same aspect ratio as the card image area.
+                    // Some character art (including Elly's) is narrower than the others.
+                    // Previously the crop width was clamped to the bitmap width but its
+                    // height stayed at halfHeight, which stretched narrow portraits sideways.
+                    int cropWidth;
+                    int cropHeight;
+                    if ((float) portrait.getWidth() / halfHeight < targetRatio) {
+                        cropWidth = portrait.getWidth();
+                        cropHeight = Math.max(1, Math.min(halfHeight,
+                            Math.round(cropWidth / targetRatio)));
+                    } else {
+                        cropHeight = halfHeight;
+                        cropWidth = Math.max(1, Math.min(portrait.getWidth(),
+                            Math.round(cropHeight * targetRatio)));
+                    }
+
+                    // Mark's face sits toward the right side of his artwork, so retain
+                    // the existing special horizontal framing for him.
                     int cropLeft;
                     if (mark) {
                         int leftShift = Math.round(cropWidth * 0.34f);
@@ -499,9 +515,9 @@ public final class Persona1Mod extends DuoMod {
                     } else {
                         cropLeft = (portrait.getWidth() - cropWidth) / 2;
                     }
-                    // Clamp the crop to the source bitmap bounds.
                     cropLeft = Math.min(cropLeft, portrait.getWidth() - cropWidth);
-                    android.graphics.Rect src = new android.graphics.Rect(cropLeft, 0, cropLeft + cropWidth, halfHeight);
+                    android.graphics.Rect src = new android.graphics.Rect(
+                        cropLeft, 0, cropLeft + cropWidth, cropHeight);
                     rect.set(left, imageTop, innerR, imageBottom);
                     c.drawBitmap(portrait, src, rect, down ? grayPaint : paint);
                 } else {
