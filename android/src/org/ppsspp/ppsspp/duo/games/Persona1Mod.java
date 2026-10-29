@@ -115,7 +115,12 @@ public final class Persona1Mod extends DuoMod {
                 if (view != null) view.invalidate();
             });
         } else if (android.os.SystemClock.uptimeMillis() - lastBattle > 1500) {
-            view.setUnits(readUnits(party, 0, PARTY_COUNT, PARTY_SIZE, false), null, false);
+            // PARTY points at the saved character roster, which can still contain
+            // characters who have left the active party. The first PARTY_COUNT
+            // entries in UNITS reflect the live party slots, matching the roster
+            // used above during battle. Use those slots on the field too so former
+            // members do not remain on the companion screen.
+            view.setUnits(readUnits(units, 0, PARTY_COUNT, UNIT_SIZE, false), null, false);
         }
     }
 
